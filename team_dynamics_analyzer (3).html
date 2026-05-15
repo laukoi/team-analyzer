@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Dynamics Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --text: #1a1a18;
+    --text2: #6b6a65;
+    --border: rgba(0,0,0,0.1);
+    --teal: #1D9E75;
+    --teal-light: #E1F5EE;
+    --teal-dark: #0F6E56;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --red: #E24B4A;
+    --red-light: #FCEBEB;
+    --blue: #378ADD;
+    --blue-light: #E6F1FB;
+    --purple: #7F77DD;
+    --purple-light: #EEEDFE;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18;
+      --surface: #242421;
+      --surface2: #2c2c2a;
+      --text: #f0ede6;
+      --text2: #888780;
+      --border: rgba(255,255,255,0.1);
+      --teal-light: #04342C;
+      --amber-light: #412402;
+      --red-light: #501313;
+      --blue-light: #042C53;
+      --purple-light: #26215C;
+    }
+  }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 2.5rem;
+  }
+
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .logo {
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text2);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: normal;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 2.5rem;
+  }
+
+  .import-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .import-section h2 {
+    font-size: 14px;
+    font-weight: normal;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 1rem;
+  }
+
+  .import-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .import-col {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--text);
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .btn {
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 24px;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+
+  .btn:hover { background: var(--teal-dark); }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-secondary:hover { border-color: var(--teal); color: var(--teal); }
+
+  .error-msg {
+    background: var(--red-light);
+    border: 1px solid rgba(226,75,74,0.3);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--red);
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .results { display: none; }
+
+  .section-title {
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  .score-card {
+    background: var(--surface);
+    padding: 1.25rem 1rem;
+    text-align: center;
+  }
+
+  .score-card .label {
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+
+  .score-card .value {
+    font-size: 32px;
+    letter-spacing: -0.03em;
+    font-weight: normal;
+  }
+
+  .score-card .bar-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .score-card .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 700px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .main { padding: 1.5rem 1rem; }
+    .header { padding: 1.5rem 1rem; }
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+
+  .chart-card h3 {
+    font-size: 13px;
+    font-weight: normal;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 1.25rem;
+  }
+
+  .radar-wrap {
+    position: relative;
+    width: 100%;
+    height: 280px;
+  }
+
+  .reveal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .reveal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .reveal-stage-label {
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text2);
+    flex: 1;
+  }
+
+  .reveal-stage-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .stage-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+
+  .stage-dot.active { background: var(--teal); }
+  .stage-dot.done { background: var(--text2); }
+
+  .reveal-title {
+    font-size: 18px;
+    font-weight: normal;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+
+  .reveal-body {
+    transition: opacity 0.3s;
+  }
+
+  .reveal-legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'Courier New', monospace;
+    min-height: 20px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .reveal-question-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 600px) {
+    .reveal-question-list { grid-template-columns: 1fr; }
+  }
+
+  .q-list-group h4 {
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    font-weight: normal;
+  }
+
+  .q-list-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .q-list-item:last-child { border-bottom: none; }
+
+  .q-num {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    flex-shrink: 0;
+    width: 22px;
+  }
+
+  .q-pct {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    flex-shrink: 0;
+    width: 36px;
+    text-align: right;
+  }
+
+  .bar-wrap-chart {
+    position: relative;
+    width: 100%;
+  }
+
+  .individual-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .individual-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+
+  .individual-card .name {
+    font-size: 14px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .individual-card .overall {
+    font-size: 28px;
+    letter-spacing: -0.03em;
+    font-weight: normal;
+    margin-bottom: 12px;
+  }
+
+  .individual-card .mini-radar {
+    position: relative;
+    width: 100%;
+    height: 160px;
+  }
+
+  .outlier-section {
+    margin-bottom: 2rem;
+  }
+
+  .outlier-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+
+  .outlier-row:last-child { border-bottom: none; }
+
+  .outlier-badge {
+    font-size: 10px;
+    font-family: 'Courier New', monospace;
+    padding: 2px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .badge-low {
+    background: var(--red-light);
+    color: var(--red);
+  }
+
+  .badge-high {
+    background: var(--teal-light);
+    color: var(--teal-dark);
+  }
+
+  .q-text { flex: 1; color: var(--text2); }
+  .q-score { font-family: 'Courier New', monospace; font-size: 13px; }
+
+  .instructions {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .instructions code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .team-name-display {
+    font-size: 18px;
+    font-weight: normal;
+    color: var(--text2);
+    margin-bottom: 2rem;
+    font-style: italic;
+  }
+
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-row label {
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .alert-box {
+    background: var(--red-light);
+    border: 1px solid rgba(226,75,74,0.25);
+    border-left: 3px solid var(--red);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .alert-box h3 {
+    font-size: 13px;
+    font-weight: normal;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .alert-person {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(226,75,74,0.15);
+    font-size: 13px;
+  }
+
+  .alert-person:last-child { border-bottom: none; }
+
+  .alert-person .pname {
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .alert-person .pdetail {
+    color: var(--text2);
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .low-pill {
+    background: rgba(226,75,74,0.12);
+    color: var(--red);
+    border-radius: 3px;
+    padding: 1px 7px;
+    font-size: 11px;
+  }
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'Courier New', monospace;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <span class="logo">Lauri Koittola</span>
+    <h1>Team Dynamics Analyzer</h1>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="import-section" id="importSection">
+    <h2>Import data</h2>
+    <p class="instructions">
+      Copy your data from Google Sheets: select from the first answer column through to the last score column, then paste below. Expected format: one row per respondent, 20 numeric columns (questions 1–20), optionally preceded by a name/identifier column. Separator: <code>tab</code> (default when copying from Sheets).
+    </p>
+    <div class="import-row">
+      <div class="import-col" style="flex: 2;">
+        <label>Paste score data (from Google Sheets)</label>
+        <textarea id="dataInput" placeholder="Paste tab-separated rows here...&#10;Tip: Select columns in Sheets and press Cmd+C, then paste here."></textarea>
+      </div>
+      <div class="import-col">
+        <label>Team / report name</label>
+        <input type="text" id="teamName" placeholder="e.g. TRILA Q2 2026" style="margin-bottom: 12px;">
+        <label>Name column?</label>
+        <select id="hasName" style="width: 100%; margin-bottom: 12px;">
+          <option value="yes">First column is a name/identifier</option>
+          <option value="no">Only score columns (20 cols)</option>
+        </select>
+        <label>Score scale</label>
+        <select id="scale" style="width: 100%; margin-bottom: 16px;">
+          <option value="5">1–5</option>
+          <option value="4">1–4</option>
+          <option value="10">1–10</option>
+        </select>
+        <button class="btn" onclick="processData()">Analyze →</button>
+      </div>
+    </div>
+    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+      <label>Paste open-ended answers (optional — two columns: what's working · what needs improvement)</label>
+      <textarea id="qualInput" placeholder="Paste the two open-ended columns here. Empty cells are fine. Header row is skipped automatically." style="min-height:90px;margin-top:6px;width:100%"></textarea>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+    <div style="margin-top: 1rem; display: flex; gap: 8px; flex-wrap: wrap;">
+      <button class="btn-secondary" onclick="loadSample()">Load sample data (TRILA)</button>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="team-name-display" id="teamNameDisplay"></div>
+
+    <div class="section-title">Category scores</div>
+    <div class="score-grid" id="scoreGrid"></div>
+
+    <div class="reveal-card" id="revealCard">
+      <div class="reveal-header">
+        <div class="reveal-stage-label" id="revealStageLabel">Stage 1 of 4 — Team overview</div>
+        <div class="reveal-stage-dots" id="revealDots"></div>
+        <button class="btn-secondary" id="revealBackBtn" onclick="revealBack()" style="display:none">← Back</button>
+        <button class="btn" id="revealNextBtn" onclick="revealNext()">Next →</button>
+      </div>
+      <div class="reveal-title" id="revealTitle">Overall team dynamics</div>
+      <div class="reveal-body" id="revealBody">
+        <div class="radar-wrap" style="max-width:480px;margin:0 auto;">
+          <canvas id="teamRadar" role="img" aria-label="Team dynamics radar chart"></canvas>
+        </div>
+      </div>
+      <div class="reveal-legend" id="revealLegend"></div>
+    </div>
+
+    <div style="margin-bottom: 2rem;">
+      <button class="btn-secondary" id="backendToggleBtn" onclick="toggleBackend()" style="font-size:13px;padding:10px 20px;border-radius:6px;">
+        ⚙ Backend
+      </button>
+    </div>
+
+    <div id="backendPanel" style="display:none">
+
+      <div class="section-title">Import new data</div>
+      <div id="importBackend" style="margin-bottom:2rem">
+        <div class="import-row">
+          <div class="import-col" style="flex:2">
+            <label>Paste data (from Google Sheets)</label>
+            <textarea id="dataInput2" placeholder="Paste tab-separated rows here..."></textarea>
+          </div>
+          <div class="import-col">
+            <label>Team / report name</label>
+            <input type="text" id="teamName2" placeholder="e.g. TRILA Q2 2026" style="margin-bottom:12px">
+            <label>Name column?</label>
+            <select id="hasName2" style="width:100%;margin-bottom:12px">
+              <option value="yes">First column is a name/identifier</option>
+              <option value="no">Only score columns (20 cols)</option>
+            </select>
+            <label>Score scale</label>
+            <select id="scale2" style="width:100%;margin-bottom:16px">
+              <option value="5">1–5</option>
+              <option value="4">1–4</option>
+              <option value="10">1–10</option>
+            </select>
+            <button class="btn" onclick="processDataFromBackend()">Re-analyze →</button>
+          </div>
+        </div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+          <label>Open-ended answers (optional)</label>
+          <textarea id="qualInput2" placeholder="Paste the two open-ended columns here." style="min-height:70px;margin-top:6px;width:100%"></textarea>
+        </div>
+        <div class="error-msg" id="errorMsg2"></div>
+        <div style="margin-top:1rem">
+          <button class="btn-secondary" onclick="loadSample()">Load sample data (TRILA)</button>
+        </div>
+      </div>
+
+      <div class="section-title">Individual responses overlay</div>
+      <div class="chart-card" style="margin-bottom:2rem">
+        <h3>All individual responses vs. team average</h3>
+        <div class="radar-wrap" style="max-width:520px;margin:0 auto;height:340px;">
+          <canvas id="overlayRadar" role="img" aria-label="Individual responses overlay radar"></canvas>
+        </div>
+        <div class="reveal-legend" style="margin-top:1rem" id="overlayLegend"></div>
+      </div>
+
+      <div id="wellbeingAlertsInner"></div>
+
+      <div class="section-title">Individual profiles</div>
+      <div class="filter-row">
+        <label>Sort by</label>
+        <select id="sortMode" onchange="renderIndividuals()">
+          <option value="overall">Overall score</option>
+          <option value="name">Name</option>
+          <option value="trust">Trust</option>
+          <option value="conflict">Dialogue skills</option>
+          <option value="commitment">Commitment</option>
+          <option value="accountability">Accountability</option>
+          <option value="performance">Performance</option>
+        </select>
+      </div>
+      <div class="individual-grid" id="individualGrid"></div>
+
+      <div class="section-title">Outlier questions</div>
+      <div class="outlier-section" id="outlierSection"></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  { key: 'performance', label: 'Performance', qs: [1,2,3,4], color: '#1D9E75' },
+  { key: 'accountability', label: 'Accountability', qs: [5,6,7,8], color: '#378ADD' },
+  { key: 'commitment', label: 'Commitment', qs: [9,10,11,12], color: '#7F77DD' },
+  { key: 'conflict', label: 'Dialogue skills', qs: [13,14,15,16], color: '#E24B4A' },
+  { key: 'trust', label: 'Trust', qs: [17,18,19,20], color: '#BA7517' }
+];
+
+const QUESTIONS = [
+  'In my team, it is clear what we are aiming for and striving to achieve together.',
+  'My team succeeds in what it aims to achieve.',
+  'We are productive and deliver strong results relative to effort and resources invested.',
+  'Our team creates genuine value for customers, users or stakeholders.',
+  'Team members follow through on what is agreed without the need for control or supervision.',
+  'We hold each other accountable for our commitments, not just rely on managers.',
+  'I find it easy to address situations where someone doesn\'t act according to shared agreements.',
+  'Our team takes collective ownership of goals and results rather than shifting blame.',
+  'People commit to decisions and support them actively, even when they initially disagreed.',
+  'There is little or no siloing or clique behavior that undermines shared goals.',
+  'My team focuses on shared goals rather than politics or personal interests.',
+  'Decisions made in our team are clearly communicated and well understood by everyone.',
+  'I can respectfully disagree openly with a manager or leader when needed.',
+  'I feel comfortable saying no when asked to do something outside my responsibility or capacity.',
+  'When someone oversteps boundaries or causes tension, it\'s easy to address it constructively.',
+  'My team can have heated discussions on important topics without it becoming personal.',
+  'I feel safe admitting my mistakes in my team or work community.',
+  'I know my colleagues as people, not just as co-workers.',
+  'I feel that I can be my authentic self in my team.',
+  'It\'s easy to ask others for help without fear of being judged or appearing weak.'
+];
+
+const SAMPLE_DATA = [
+  ['resannie.naveed@mehilainen.fi',5,4,5,5,4,5,3,5,4,4,5,4,5,5,5,5,5,5,5,5],
+  ['Onnikodit Alvar',4,4,4,4,2,2,3,4,3,3,4,4,4,2,2,3,3,3,3,3],
+  ['Justiina',4,4,4,4,4,4,4,4,4,3,4,5,3,4,3,5,4,4,4,5],
+  ['Manu',5,5,5,5,5,5,4,5,5,5,5,5,3,3,4,2,4,4,4,5],
+  ['Onnikoti Alvar',1,2,5,5,5,4,1,2,1,2,4,1,1,1,1,1,1,4,2,3],
+  ['resannie.naveed@mehilainen.f',5,3,3,5,4,5,1,4,4,5,4,2,3,4,1,3,4,5,5,4],
+  ['Elli',2,3,4,2,2,3,2,3,2,3,5,2,1,1,1,2,2,4,4,4],
+  ['R8',5,4,4,5,4,4,4,4,4,4,5,4,4,3,3,4,4,3,4,4],
+  ['R9',3,3,4,5,4,4,3,4,3,5,5,2,2,3,3,4,4,3,5,5],
+  ['R10',4,2,4,4,5,4,4,5,4,5,3,3,5,2,4,0,5,4,4,4],
+  ['R11',4,3,3,4,3,2,2,4,3,4,4,3,5,1,4,4,4,1,5,4],
+  ['R12',3,3,2,4,5,4,4,4,3,2,3,2,2,1,1,2,5,4,4,3],
+  ['R13',2,3,5,5,4,4,3,5,4,0,4,2,5,4,3,5,5,3,5,5],
+  ['R14',3,3,2,2,2,2,2,2,2,3,3,2,2,1,1,2,2,2,3,2],
+  ['R15',4,4,5,5,5,4,3,4,4,4,4,1,4,4,3,4,4,4,5,4],
+  ['R16',4,3,5,5,4,4,2,4,3,4,4,2,3,3,3,3,4,3,4,5],
+  ['R17',1,3,3,3,3,4,3,2,3,2,3,1,3,2,2,3,4,4,3,4],
+  ['R18',3,4,3,4,4,4,3,4,4,3,5,4,3,2,2,5,4,3,4,4],
+  ['R19',1,1,1,2,3,3,1,1,1,0,2,0,3,1,1,2,2,1,2,3],
+  ['R20',2,3,4,4,4,5,4,4,4,2,4,3,4,4,3,4,5,4,5,4],
+  ['R21',4,4,1,5,1,2,2,4,4,4,3,0,3,3,2,3,4,4,5,4],
+  ['R22',2,3,4,4,3,3,3,3,3,0,3,2,5,4,3,5,4,4,3,5],
+  ['R23',2,2,4,4,4,4,2,3,4,3,4,1,1,1,1,2,4,5,5,4],
+  ['R24',3,3,3,3,2,4,2,2,4,2,4,2,1,4,4,4,4,4,2,4]
+];
+
+let parsedData = [];
+let teamRadarChart = null;
+let barChartInst = null;
+let miniCharts = {};
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+function loadSample() {
+  document.getElementById('teamName').value = 'TRILA';
+  document.getElementById('hasName').value = 'yes';
+  document.getElementById('scale').value = '5';
+  parsedData = SAMPLE_DATA.map(row => ({ name: row[0], scores: row.slice(1) }));
+  renderResults();
+}
+
+function processDataFromBackend() {
+  const raw = document.getElementById('dataInput2').value.trim();
+  const hasNameVal = document.getElementById('hasName2').value;
+  const scaleVal = document.getElementById('scale2').value;
+  const nameVal = document.getElementById('teamName2').value;
+  const qualRaw = document.getElementById('qualInput2').value.trim();
+  if (raw) {
+    document.getElementById('dataInput').value = raw;
+    document.getElementById('hasName').value = hasNameVal;
+    document.getElementById('scale').value = scaleVal;
+    document.getElementById('teamName').value = nameVal;
+  }
+  if (qualRaw) document.getElementById('qualInput').value = qualRaw;
+  processData();
+  document.getElementById('errorMsg2').style.display = 'none';
+}
+
+function processData() {
+  hideError();
+  const raw = document.getElementById('dataInput').value.trim();
+  if (!raw) { showError('No data pasted.'); return; }
+
+  const hasName = document.getElementById('hasName').value === 'yes';
+  const rows = raw.split('\n').map(r => r.split('\t').map(c => c.trim()));
+
+  parsedData = [];
+  let rowNum = 1;
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.every(c => c.trim() === '')) continue;
+
+    // Detect and skip header rows: if the first numeric-candidate columns are not numbers, skip
+    const candidateStart = hasName ? 1 : 0;
+    const candidates = row.slice(candidateStart, candidateStart + 5);
+    const isHeader = candidates.some(c => isNaN(Number(c.replace(',', '.').trim())) && c.trim() !== '');
+    if (isHeader) continue;
+
+    // Find the first 20 numeric values in the row
+    const numericCols = [];
+    const nonNumericBefore = [];
+    let scoresStarted = false;
+    for (let j = 0; j < row.length; j++) {
+      const v = Number(row[j].replace(',', '.').trim());
+      if (!isNaN(v) && row[j].trim() !== '') {
+        numericCols.push(v);
+        scoresStarted = true;
+      } else if (!scoresStarted) {
+        nonNumericBefore.push(row[j].trim());
+      }
+    }
+
+    if (numericCols.length < 20) continue;
+    const scores = numericCols.slice(0, 20);
+
+    let name;
+    if (hasName && nonNumericBefore.length > 0) {
+      name = nonNumericBefore[nonNumericBefore.length - 1] || ('R' + rowNum);
+    } else {
+      name = 'R' + rowNum;
+    }
+    rowNum++;
+    parsedData.push({ name, scores });
+  }
+
+  if (parsedData.length === 0) { showError('Could not parse any valid rows. Check format: 20 numeric columns after the name column.'); return; }
+  renderResults();
+}
+
+function catScore(scores, cat, scale) {
+  const vals = cat.qs.map(q => scores[q - 1]);
+  const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+  return Math.round((avg / scale) * 100);
+}
+
+function overallScore(scores, scale) {
+  const avg = scores.reduce((a,b) => a+b, 0) / scores.length;
+  return Math.round((avg / scale) * 100);
+}
+
+function scoreColor(pct) {
+  if (pct >= 75) return '#1D9E75';
+  if (pct >= 55) return '#BA7517';
+  return '#E24B4A';
+}
+
+function renderResults() {
+  const scale = parseInt(document.getElementById('scale').value);
+  const name = document.getElementById('teamName').value || 'Team';
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('importSection').style.display = 'none';
+  document.getElementById('teamNameDisplay').textContent = name + ' — ' + parsedData.length + ' respondents';
+
+  const avgScores = QUESTIONS.map((_, qi) => {
+    const vals = parsedData.map(r => r.scores[qi]).filter(v => !isNaN(v));
+    return vals.reduce((a,b) => a+b, 0) / vals.length;
+  });
+
+  const catAvgs = CATEGORIES.map(cat => {
+    const pct = Math.round(cat.qs.map(q => (avgScores[q-1] / scale) * 100).reduce((a,b) => a+b, 0) / cat.qs.length);
+    return { ...cat, pct };
+  });
+
+  const overall = Math.round(catAvgs.reduce((a,c) => a + c.pct, 0) / catAvgs.length);
+
+  const grid = document.getElementById('scoreGrid');
+  grid.innerHTML = catAvgs.map(c => `
+    <div class="score-card">
+      <div class="label">${c.label}</div>
+      <div class="value" style="color:${scoreColor(c.pct)}">${c.pct}%</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${c.pct}%;background:${scoreColor(c.pct)}"></div></div>
+    </div>
+  `).join('') + `
+    <div class="score-card" style="background:var(--surface2)">
+      <div class="label">Overall</div>
+      <div class="value" style="color:${scoreColor(overall)}">${overall}%</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${overall}%;background:${scoreColor(overall)}"></div></div>
+    </div>
+  `;
+
+  renderTeamRadar(catAvgs);
+  initReveal(catAvgs, avgScores, scale);
+  renderOutliers(avgScores, scale);
+}
+
+let revealStage = 0;
+let revealData = {};
+
+function initReveal(catAvgs, avgScores, scale) {
+  const pcts = avgScores.map(v => (v / scale) * 100);
+  const ranked = pcts.map((p, i) => ({ i, p })).sort((a, b) => b.p - a.p);
+  const top5 = ranked.slice(0, 5);
+  const bot5 = ranked.slice(-5).reverse();
+
+  const { positive, negative, hasQual } = parseQualData();
+  revealData = { catAvgs, avgScores, scale, pcts, top5, bot5, hasQual, qualPositive: positive, qualNegative: negative };
+  revealStage = 0;
+  renderRevealStage();
+}
+
+function revealNext() {
+  const maxStage = revealData.hasQual ? 7 : 5;
+  revealStage = Math.min(revealStage + 1, maxStage);
+  renderRevealStage();
+}
+
+function revealBack() {
+  revealStage = Math.max(revealStage - 1, 0);
+  renderRevealStage();
+}
+
+function renderRevealStage() {
+  const { catAvgs, avgScores, scale, pcts, top5, bot5, hasQual } = revealData;
+  const stages = [
+    'Overall team dynamics',
+    'Strongest questions',
+    'Questions needing attention',
+    'Behind the averages — individual extremes',
+    'All 20 question averages',
+    'Averages with individual range',
+    ...(hasQual ? ['What is working well', 'What needs improvement'] : [])
+  ];
+  const TOTAL = stages.length;
+
+  document.getElementById('revealStageLabel').textContent = `Stage ${revealStage + 1} of ${TOTAL} — ${stages[revealStage]}`;
+  document.getElementById('revealTitle').textContent = stages[revealStage];
+  document.getElementById('revealNextBtn').textContent = revealStage < TOTAL - 1 ? 'Next →' : '✓ Done';
+  document.getElementById('revealNextBtn').disabled = revealStage === TOTAL - 1;
+  document.getElementById('revealBackBtn').style.display = revealStage > 0 ? 'inline-block' : 'none';
+
+  const dots = document.getElementById('revealDots');
+  dots.innerHTML = Array.from({length: TOTAL}, (_, i) =>
+    `<div class="stage-dot ${i === revealStage ? 'active' : i < revealStage ? 'done' : ''}"></div>`
+  ).join('');
+
+  const legend = document.getElementById('revealLegend');
+  const body = document.getElementById('revealBody');
+
+  if (revealStage <= 2) {
+    body.innerHTML = `<div class="radar-wrap" style="max-width:480px;margin:0 auto;"><canvas id="teamRadar" role="img" aria-label="Team dynamics radar chart"></canvas></div>`;
+
+    if (teamRadarChart) { teamRadarChart.destroy(); teamRadarChart = null; }
+
+    const questionDotPlugin = {
+      id: 'questionDots',
+      afterDatasetsDraw(chart) {
+        if (revealStage === 0) return;
+        const { ctx: c, scales: { r } } = chart;
+        const cx = r.xCenter, cy = r.yCenter;
+        const getAngle = i => (Math.PI * 2 * i / CATEGORIES.length) - Math.PI / 2;
+
+        CATEGORIES.forEach((cat, catIdx) => {
+          const angle = getAngle(catIdx);
+          const maxR = r.drawingArea;
+
+          if (revealStage === 1) {
+            top5.filter(q => cat.qs.includes(q.i + 1)).forEach(q => {
+              const radius = (q.p / 100) * maxR;
+              const x = cx + radius * Math.cos(angle);
+              const y = cy + radius * Math.sin(angle);
+              c.save();
+              c.beginPath(); c.arc(x, y, 8, 0, Math.PI * 2);
+              c.fillStyle = '#1D9E75'; c.fill();
+              c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
+              c.font = '700 8px "Courier New",monospace';
+              c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+              c.fillText('Q' + (q.i + 1), x, y);
+              c.restore();
+            });
+          }
+
+          if (revealStage >= 2) {
+            bot5.filter(q => cat.qs.includes(q.i + 1)).forEach(q => {
+              const radius = (q.p / 100) * maxR;
+              const x = cx + radius * Math.cos(angle);
+              const y = cy + radius * Math.sin(angle);
+              c.save();
+              c.beginPath(); c.arc(x, y, 8, 0, Math.PI * 2);
+              c.fillStyle = '#E24B4A'; c.fill();
+              c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
+              c.font = '700 8px "Courier New",monospace';
+              c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+              c.fillText('Q' + (q.i + 1), x, y);
+              c.restore();
+            });
+          }
+        });
+      }
+    };
+
+    const datasets = [{
+      label: 'Team average',
+      data: catAvgs.map(c => c.pct),
+      backgroundColor: 'rgba(29,158,117,0.15)',
+      borderColor: '#1D9E75',
+      borderWidth: 2,
+      pointBackgroundColor: '#1D9E75',
+      pointRadius: 4,
+      pointHoverRadius: 5
+    }];
+
+    const ctx = document.getElementById('teamRadar').getContext('2d');
+    teamRadarChart = new Chart(ctx, {
+      type: 'radar',
+      data: { labels: catAvgs.map(c => c.label), datasets },
+      plugins: [questionDotPlugin],
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { stepSize: 20, color: '#888780', font: { size: 10 }, backdropColor: 'transparent' },
+            grid: { color: 'rgba(128,128,128,0.15)' },
+            angleLines: { color: 'rgba(128,128,128,0.15)' },
+            pointLabels: { color: '#6b6a65', font: { size: 12 } }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }
+        }
+      }
+    });
+
+    const radarCanvas = document.getElementById('teamRadar');
+    const radarTip = document.createElement('div');
+    radarTip.style.cssText = 'position:absolute;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--text);max-width:260px;line-height:1.5;pointer-events:none;z-index:30;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.1)';
+    radarCanvas.parentElement.style.position = 'relative';
+    radarCanvas.parentElement.appendChild(radarTip);
+
+    radarCanvas.addEventListener('mousemove', e => {
+      const chart = teamRadarChart;
+      if (!chart) return;
+      const r = chart.scales.r;
+      const cx = r.xCenter, cy = r.yCenter, maxR = r.drawingArea;
+      const rect = radarCanvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      const activeDots = [];
+      const getAngle = i => (Math.PI * 2 * i / CATEGORIES.length) - Math.PI / 2;
+
+      const dotsToCheck = revealStage === 1 ? top5 : revealStage === 2 ? bot5 : [];
+      CATEGORIES.forEach((cat, catIdx) => {
+        const angle = getAngle(catIdx);
+        dotsToCheck.filter(q => cat.qs.includes(q.i + 1)).forEach(q => {
+          const radius = (q.p / 100) * maxR;
+          const x = cx + radius * Math.cos(angle);
+          const y = cy + radius * Math.sin(angle);
+          const dist = Math.sqrt((mx - x) ** 2 + (my - y) ** 2);
+          if (dist < 12) activeDots.push({ q, x, y });
+        });
+      });
+
+      if (activeDots.length > 0) {
+        const { q, x, y } = activeDots[0];
+        radarTip.innerHTML = `<strong style="font-family:'Courier New',monospace;font-size:11px">Q${q.i + 1} — ${Math.round(q.p)}%</strong><br><span style="color:var(--text2)">${QUESTIONS[q.i]}</span>`;
+        let left = x + 14, top = y - 10;
+        if (left + 280 > rect.width) left = x - 280;
+        if (top < 0) top = y + 14;
+        radarTip.style.left = left + 'px';
+        radarTip.style.top = top + 'px';
+        radarTip.style.display = 'block';
+        radarCanvas.style.cursor = 'pointer';
+      } else {
+        radarTip.style.display = 'none';
+        radarCanvas.style.cursor = 'default';
+      }
+    });
+
+    radarCanvas.addEventListener('mouseleave', () => {
+      radarTip.style.display = 'none';
+    });
+
+    if (revealStage === 0) {
+      legend.innerHTML = '';
+    } else if (revealStage === 1) {
+      legend.innerHTML = `<div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Green dot = top 5 question, placed at its exact score on that arm</div>`;
+      renderQuestionCallout(top5, '#1D9E75', 'Top 5 questions', body);
+    } else {
+      legend.innerHTML = `
+        <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Top 5 questions</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div>Bottom 5 questions</div>
+      `;
+      renderQuestionCallout(top5, '#1D9E75', 'Top 5 questions', body, bot5);
+    }
+
+  } else if (revealStage === 3) {
+    if (teamRadarChart) { teamRadarChart.destroy(); teamRadarChart = null; }
+
+    // Find the single highest and single lowest individual answer per category
+    const catHighest = CATEGORIES.map(cat => {
+      let best = -Infinity, worst = Infinity;
+      parsedData.forEach(r => {
+        cat.qs.forEach(q => {
+          const v = (r.scores[q - 1] / scale) * 100;
+          if (v > best) best = v;
+          if (v < worst) worst = v;
+        });
+      });
+      return { best: Math.round(best), worst: Math.round(worst) };
+    });
+
+    body.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start"><div><div style="font-size:11px;font-family:'Courier New',monospace;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:0.75rem">Team average polygon</div><div class="radar-wrap" style="height:260px"><canvas id="radarAvg" role="img" aria-label="Average radar"></canvas></div></div><div><div style="font-size:11px;font-family:'Courier New',monospace;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:0.75rem">Single answer extremes</div><div class="radar-wrap" style="height:260px"><canvas id="radarExtremes" role="img" aria-label="Individual extremes radar"></canvas></div></div></div>`;
+
+    const avgCtx = document.getElementById('radarAvg').getContext('2d');
+    new Chart(avgCtx, {
+      type: 'radar',
+      data: {
+        labels: catAvgs.map(c => c.label),
+        datasets: [{
+          label: 'Team average',
+          data: catAvgs.map(c => c.pct),
+          backgroundColor: 'rgba(29,158,117,0.15)',
+          borderColor: '#1D9E75',
+          borderWidth: 2,
+          pointBackgroundColor: '#1D9E75',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, color: '#888780', font: { size: 9 }, backdropColor: 'transparent' }, grid: { color: 'rgba(128,128,128,0.15)' }, angleLines: { color: 'rgba(128,128,128,0.15)' }, pointLabels: { color: '#6b6a65', font: { size: 11 } } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '' } } }
+      }
+    });
+
+    const extCtx = document.getElementById('radarExtremes').getContext('2d');
+    new Chart(extCtx, {
+      type: 'radar',
+      data: {
+        labels: catAvgs.map(c => c.label),
+        datasets: [
+          {
+            label: 'Highest single answers',
+            data: catHighest.map(c => c.best),
+            backgroundColor: 'rgba(29,158,117,0.12)',
+            borderColor: '#1D9E75',
+            borderWidth: 1.5,
+            borderDash: [4, 3],
+            pointBackgroundColor: '#1D9E75',
+            pointRadius: 8,
+            pointStyle: 'circle',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          },
+          {
+            label: 'Lowest single answers',
+            data: catHighest.map(c => c.worst),
+            backgroundColor: 'rgba(226,75,74,0.12)',
+            borderColor: '#E24B4A',
+            borderWidth: 1.5,
+            borderDash: [4, 3],
+            pointBackgroundColor: '#E24B4A',
+            pointRadius: 8,
+            pointStyle: 'circle',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          },
+          {
+            label: 'Team average',
+            data: catAvgs.map(c => c.pct),
+            backgroundColor: 'rgba(29,158,117,0.08)',
+            borderColor: '#1D9E75',
+            borderWidth: 2,
+            pointBackgroundColor: '#1D9E75',
+            pointRadius: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, color: '#888780', font: { size: 9 }, backdropColor: 'transparent' }, grid: { color: 'rgba(128,128,128,0.15)' }, angleLines: { color: 'rgba(128,128,128,0.15)' }, pointLabels: { color: '#6b6a65', font: { size: 11 } } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: item => item.dataset.label + ': ' + item.raw + '%' } } }
+      }
+    });
+
+    legend.innerHTML = `
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;border:2px solid #fff;outline:1px solid #1D9E75"></div>Highest single answer per category</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E24B4A;border:2px solid #fff;outline:1px solid #E24B4A"></div>Lowest single answer per category</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;opacity:0.4"></div>Team average</div>
+    `;
+
+    const gapNote = document.createElement('p');
+    gapNote.style.cssText = 'font-size:13px;color:var(--text2);margin-top:1rem;line-height:1.6;font-style:italic';
+    gapNote.textContent = 'The gap between the green and red dots shows the emotional range hidden inside the averages. A wide gap means people have very different experiences of the same team.';
+    body.appendChild(gapNote);
+
+  } else if (revealStage === 4) {
+    if (teamRadarChart) { teamRadarChart.destroy(); teamRadarChart = null; }
+    const numQ = avgScores.length;
+    const h = Math.max(320, numQ * 28 + 60);
+    body.innerHTML = `<div class="bar-wrap-chart" id="barWrap" style="height:${h}px"><canvas id="barChart" role="img" aria-label="Average scores per question"></canvas></div>`;
+    legend.innerHTML = `
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Top 25%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#BA7517"></div>Mid range</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div>Bottom 25%</div>
+    `;
+    renderBarChart(avgScores, scale, false);
+
+  } else if (revealStage === 5) {
+    if (teamRadarChart) { teamRadarChart.destroy(); teamRadarChart = null; }
+    const numQ = avgScores.length;
+    const h = Math.max(320, numQ * 28 + 60);
+    body.innerHTML = `<div class="bar-wrap-chart" id="barWrap" style="height:${h}px"><canvas id="barChart" role="img" aria-label="Average scores with min and max per question"></canvas></div>`;
+    legend.innerHTML = `
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Top 25% avg</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#BA7517"></div>Mid range avg</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div>Bottom 25% avg</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;border:2px solid white;outline:1px solid #1D9E75;width:8px;height:8px;border-radius:50%"></div>Highest single answer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E24B4A;border:2px solid white;outline:1px solid #E24B4A;width:8px;height:8px;border-radius:50%"></div>Lowest single answer</div>
+    `;
+    renderBarChart(avgScores, scale, true);
+
+  } else if (revealStage === 6 || revealStage === 7) {
+    if (teamRadarChart) { teamRadarChart.destroy(); teamRadarChart = null; }
+    const isPositive = revealStage === 6;
+    const cacheKey = isPositive ? 'qualPos' : 'qualNeg';
+
+    body.innerHTML = `
+      <div id="qualSlide" style="min-height:200px">
+        <div id="qualLoading" style="display:flex;align-items:center;gap:10px;color:var(--text2);font-size:13px;font-family:'Courier New',monospace;padding:2rem 0">
+          <div style="width:16px;height:16px;border:2px solid var(--teal);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+          Anonymizing responses...
+        </div>
+        <div id="qualContent" style="display:none"></div>
+      </div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+
+    legend.innerHTML = '';
+
+    if (revealData[cacheKey]) {
+      renderQualContent(revealData[cacheKey], isPositive);
+      return;
+    }
+
+    const answers = isPositive
+      ? revealData.qualPositive.filter(a => a.trim())
+      : revealData.qualNegative.filter(a => a.trim());
+
+    const prompt = `You are helping facilitate an anonymous team dynamics workshop. Below are open-ended survey answers from team members. Your job is to:
+1. Extract all distinct ideas or observations
+2. Neutralize the language — remove personal voice, informal phrasing, and anything that could identify the writer
+3. Merge near-identical ideas into one
+4. Return a randomized bullet list of clean, neutral, short statements (max 12 words each)
+5. Return ONLY the bullet list, nothing else — no intro, no headers, no explanation
+6. Use plain text bullets starting with a dash -
+
+Answers:
+${answers.map((a, i) => `${i + 1}. ${a}`).join('\n')}`;
+
+    fetch('https://personality-proxy.lauri-38c.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      let text = '';
+      if (data.content && Array.isArray(data.content)) {
+        text = data.content.find(b => b.type === 'text')?.text || '';
+      } else if (typeof data.content === 'string') {
+        text = data.content;
+      } else if (data.completion) {
+        text = data.completion;
+      } else if (data.error) {
+        throw new Error(data.error.message || 'API error');
+      }
+      if (!text) throw new Error('Empty response from API');
+      revealData[cacheKey] = text;
+      renderQualContent(text, isPositive);
+    })
+    .catch(err => {
+      const loading = document.getElementById('qualLoading');
+      const content = document.getElementById('qualContent');
+      if (loading) loading.style.display = 'none';
+      if (content) {
+        content.style.display = 'block';
+        content.innerHTML = `<p style="color:var(--text2);font-size:13px">Error: ${err.message}. Check console for details.</p>`;
+      }
+      console.error('Qual API error:', err);
+    });
+  }
+}
+
+function renderQualContent(text, isPositive) {
+  const loading = document.getElementById('qualLoading');
+  const content = document.getElementById('qualContent');
+  if (loading) loading.style.display = 'none';
+  if (!content) return;
+  content.style.display = 'block';
+
+  const lines = text.split('\n')
+    .map(l => l.replace(/^[-•*]\s*/, '').trim())
+    .filter(l => l.length > 0);
+
+  const color = isPositive ? '#1D9E75' : '#E24B4A';
+  const borderColor = isPositive ? 'rgba(29,158,117,0.2)' : 'rgba(226,75,74,0.2)';
+
+  content.innerHTML = lines.map(l => `
+    <div style="display:flex;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px solid ${borderColor}">
+      <span style="color:${color};font-size:18px;line-height:1;flex-shrink:0">—</span>
+      <span style="font-size:15px;color:var(--text);line-height:1.5">${l}</span>
+    </div>
+  `).join('');
+}
+
+function parseQualData() {
+  const raw = document.getElementById('qualInput').value.trim();
+  if (!raw) return { positive: [], negative: [], hasQual: false };
+
+  const rows = raw.split('\n').map(r => r.split('\t').map(c => c.trim()));
+  const positive = [], negative = [];
+
+  for (const row of rows) {
+    if (row.length === 0) continue;
+    const col0 = row[0] || '';
+    const col1 = row[1] || '';
+    const isHeader = col0.toLowerCase().includes('working') || col0.toLowerCase().includes('please share') || col0.toLowerCase().includes('what is');
+    if (isHeader) continue;
+    if (col0) positive.push(col0);
+    if (col1) negative.push(col1);
+  }
+
+  return { positive, negative, hasQual: positive.length > 0 || negative.length > 0 };
+}
+
+function renderQuestionCallout(top5, topColor, topLabel, body, bot5) {
+  const existing = body.querySelector('.reveal-question-list');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.className = 'reveal-question-list';
+  div.style.marginTop = '1.5rem';
+
+  const makeList = (items, color, title) => `
+    <div class="q-list-group">
+      <h4 style="color:${color}">${title}</h4>
+      ${items.map(q => `
+        <div class="q-list-item">
+          <span class="q-num">Q${q.i + 1}</span>
+          <span style="flex:1;color:var(--text2)">${QUESTIONS[q.i]}</span>
+          <span class="q-pct" style="color:${color}">${Math.round(q.p)}%</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  if (bot5) {
+    div.innerHTML = makeList(top5, '#1D9E75', topLabel) + makeList(bot5, '#E24B4A', 'Bottom 5 questions');
+  } else {
+    div.innerHTML = makeList(top5, topColor, topLabel);
+  }
+  body.appendChild(div);
+}
+
+function renderTeamRadar(catAvgs) {
+}
+
+function renderBarChart(avgScores, scale, showRange) {
+  if (barChartInst) { barChartInst.destroy(); barChartInst = null; }
+
+  const pcts = avgScores.map(v => (v / scale) * 100);
+  const sorted = [...pcts].sort((a, b) => a - b);
+  const lowCutoff = sorted[Math.floor(sorted.length * 0.25)];
+  const highCutoff = sorted[Math.ceil(sorted.length * 0.75)];
+  const colors = pcts.map(p => {
+    if (p >= highCutoff) return '#1D9E75';
+    if (p <= lowCutoff) return '#E24B4A';
+    return '#BA7517';
+  });
+
+  const minPcts = showRange ? avgScores.map((_, qi) => {
+    const vals = parsedData.map(r => r.scores[qi]).filter(v => !isNaN(v));
+    return parseFloat((Math.min(...vals) / scale * 100).toFixed(1));
+  }) : [];
+  const maxPcts = showRange ? avgScores.map((_, qi) => {
+    const vals = parsedData.map(r => r.scores[qi]).filter(v => !isNaN(v));
+    return parseFloat((Math.max(...vals) / scale * 100).toFixed(1));
+  }) : [];
+
+  const dotPlugin = {
+    id: 'minMaxDots',
+    afterDatasetsDraw(chart) {
+      if (!showRange) return;
+      const { ctx: c, scales: { x, y } } = chart;
+      c.save();
+      avgScores.forEach((_, i) => {
+        const yPos = y.getPixelForValue(i);
+        const xMin = x.getPixelForValue(minPcts[i]);
+        const xMax = x.getPixelForValue(maxPcts[i]);
+        const r = 5;
+        c.beginPath(); c.arc(xMin, yPos, r, 0, Math.PI*2);
+        c.fillStyle = '#E24B4A'; c.fill();
+        c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
+        c.beginPath(); c.arc(xMax, yPos, r, 0, Math.PI*2);
+        c.fillStyle = '#1D9E75'; c.fill();
+        c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
+      });
+      c.restore();
+    }
+  };
+
+  const ctx = document.getElementById('barChart').getContext('2d');
+  barChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: avgScores.map((_, i) => 'Q' + (i + 1)),
+      datasets: [{
+        label: 'Average',
+        data: pcts.map(v => parseFloat(v.toFixed(1))),
+        backgroundColor: colors,
+        borderWidth: 0,
+        borderRadius: 2,
+        barPercentage: 0.7
+      }]
+    },
+    plugins: [dotPlugin],
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { right: 8 } },
+      scales: {
+        x: {
+          min: 0, max: 105,
+          ticks: { color: '#888780', font: { size: 10 }, callback: v => v <= 100 ? v + '%' : '' },
+          grid: { color: 'rgba(128,128,128,0.1)' }
+        },
+        y: {
+          ticks: { color: '#888780', font: { size: 10, family: 'Courier New' }, autoSkip: false },
+          grid: { display: false }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => 'Q' + (items[0].dataIndex + 1) + ': ' + QUESTIONS[items[0].dataIndex],
+            label: item => {
+              const i = item.dataIndex;
+              let lines = [' Average: ' + item.raw.toFixed(1) + '%'];
+              if (showRange) {
+                lines.push(' Lowest answer: ' + minPcts[i].toFixed(1) + '%');
+                lines.push(' Highest answer: ' + maxPcts[i].toFixed(1) + '%');
+              }
+              return lines;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderIndividuals(scale) {
+  scale = scale || parseInt(document.getElementById('scale').value);
+  const sortMode = document.getElementById('sortMode').value;
+
+  let sorted = parsedData.map(r => {
+    const cats = CATEGORIES.map(cat => ({ key: cat.key, pct: catScore(r.scores, cat, scale) }));
+    const overall = Math.round(cats.reduce((a,c) => a+c.pct, 0) / cats.length);
+    return { ...r, cats, overall };
+  });
+
+  if (sortMode === 'overall') sorted.sort((a,b) => b.overall - a.overall);
+  else if (sortMode === 'name') sorted.sort((a,b) => a.name.localeCompare(b.name));
+  else sorted.sort((a,b) => {
+    const acat = a.cats.find(c => c.key === sortMode);
+    const bcat = b.cats.find(c => c.key === sortMode);
+    return (bcat?.pct||0) - (acat?.pct||0);
+  });
+
+  Object.values(miniCharts).forEach(c => c.destroy());
+  miniCharts = {};
+
+  const grid = document.getElementById('individualGrid');
+  grid.innerHTML = sorted.map((r, idx) => `
+    <div class="individual-card">
+      <div class="name">${r.name}</div>
+      <div class="overall" style="color:${scoreColor(r.overall)}">${r.overall}%</div>
+      <div class="mini-radar"><canvas id="mini_${idx}" role="img" aria-label="Radar for ${r.name}"></canvas></div>
+      <div style="margin-top: 8px;">
+        ${r.cats.map(c => `
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px;">
+            <span style="color:var(--text2);width:80px;font-family:'Courier New',monospace;font-size:10px;flex-shrink:0">${CATEGORIES.find(cat=>cat.key===c.key).label}</span>
+            <div style="flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div style="width:${c.pct}%;height:100%;background:${scoreColor(c.pct)};border-radius:2px"></div>
+            </div>
+            <span style="color:var(--text2);font-family:'Courier New',monospace;font-size:10px;width:28px;text-align:right">${c.pct}%</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  setTimeout(() => {
+    sorted.forEach((r, idx) => {
+      const ctx = document.getElementById('mini_' + idx);
+      if (!ctx) return;
+      miniCharts['mini_' + idx] = new Chart(ctx.getContext('2d'), {
+        type: 'radar',
+        data: {
+          labels: CATEGORIES.map(c => c.label.slice(0,4)),
+          datasets: [{
+            data: r.cats.map(c => c.pct),
+            backgroundColor: 'rgba(55,138,221,0.15)',
+            borderColor: '#378ADD',
+            borderWidth: 1.5,
+            pointRadius: 2,
+            pointBackgroundColor: '#378ADD'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              min: 0, max: 100,
+              ticks: { display: false },
+              grid: { color: 'rgba(128,128,128,0.1)' },
+              angleLines: { color: 'rgba(128,128,128,0.1)' },
+              pointLabels: { color: '#888780', font: { size: 9 } }
+            }
+          },
+          plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        }
+      });
+    });
+  }, 50);
+}
+
+let overlayRadarChart = null;
+
+function toggleBackend() {
+  const panel = document.getElementById('backendPanel');
+  const btn = document.getElementById('backendToggleBtn');
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  btn.textContent = isHidden ? '⚙ Backend (hide)' : '⚙ Backend';
+  if (isHidden) {
+    renderOverlayRadar();
+    const scale = parseInt(document.getElementById('scale').value);
+    renderWellbeingAlerts(scale);
+    renderIndividuals(scale);
+  }
+}
+
+function renderOverlayRadar() {
+  if (overlayRadarChart) { overlayRadarChart.destroy(); overlayRadarChart = null; }
+  const scale = parseInt(document.getElementById('scale').value);
+
+  const individualDatasets = parsedData.map((r, idx) => {
+    const catScores = CATEGORIES.map(cat => {
+      const vals = cat.qs.map(q => r.scores[q - 1]);
+      return Math.round((vals.reduce((a,b) => a+b, 0) / vals.length / scale) * 100);
+    });
+    return {
+      label: r.name,
+      data: catScores,
+      backgroundColor: 'rgba(0,0,0,0)',
+      borderColor: 'rgba(136,135,128,0.35)',
+      borderWidth: 1,
+      pointBackgroundColor: 'rgba(136,135,128,0.5)',
+      pointRadius: 2,
+      pointHoverRadius: 4
+    };
+  });
+
+  const avgScores = QUESTIONS.map((_, qi) => {
+    const vals = parsedData.map(r => r.scores[qi]).filter(v => !isNaN(v));
+    return vals.reduce((a,b) => a+b, 0) / vals.length;
+  });
+  const catAvgs = CATEGORIES.map(cat => {
+    return Math.round(cat.qs.map(q => (avgScores[q-1] / scale) * 100).reduce((a,b) => a+b, 0) / cat.qs.length);
+  });
+
+  const avgDataset = {
+    label: 'Team average',
+    data: catAvgs,
+    backgroundColor: 'rgba(29,158,117,0.12)',
+    borderColor: '#1D9E75',
+    borderWidth: 3,
+    pointBackgroundColor: '#1D9E75',
+    pointRadius: 5,
+    pointHoverRadius: 6
+  };
+
+  const ctx = document.getElementById('overlayRadar').getContext('2d');
+  overlayRadarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: CATEGORIES.map(c => c.label),
+      datasets: [...individualDatasets, avgDataset]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 20, color: '#888780', font: { size: 10 }, backdropColor: 'transparent' },
+          grid: { color: 'rgba(128,128,128,0.15)' },
+          angleLines: { color: 'rgba(128,128,128,0.15)' },
+          pointLabels: { color: '#6b6a65', font: { size: 12 } }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => items[0].dataset.label,
+            label: item => item.label + ': ' + item.raw + '%'
+          }
+        }
+      }
+    }
+  });
+
+  document.getElementById('overlayLegend').innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Team average (bold line)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(136,135,128,0.6)"></div>Individual respondents (${parsedData.length} lines)</div>
+  `;
+}
+
+function renderWellbeingAlerts(scale) {
+  const threshold = scale <= 5 ? 2 : (scale <= 4 ? 2 : 4);
+  const minCount = 3;
+
+  const flagged = parsedData.map(r => {
+    const lowQs = r.scores.map((v, i) => ({ q: i + 1, v })).filter(x => x.v <= threshold);
+    return { name: r.name, lowQs, count: lowQs.length };
+  }).filter(r => r.count >= minCount).sort((a, b) => b.count - a.count);
+
+  const container = document.getElementById('wellbeingAlertsInner');
+  if (!container) return;
+  if (flagged.length === 0) { container.innerHTML = ''; return; }
+
+  container.innerHTML = `
+    <div class="alert-box" style="margin-bottom:2rem">
+      <h3>⚠ Wellbeing flags — ${flagged.length} respondent${flagged.length > 1 ? 's' : ''} with ${minCount}+ answers at ${threshold} or below</h3>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">These individuals answered very low (≤${threshold}/${scale}) on multiple questions. Worth a private check-in — low scores on boundary-setting, psychological safety, or conflict questions can signal stress or disengagement.</p>
+      ${flagged.map(r => `
+        <div class="alert-person">
+          <div class="pname">${r.name} — ${r.count} low answers</div>
+          <div class="pdetail">
+            ${r.lowQs.map(x => `<span class="low-pill">Q${x.q}: ${x.v}/${scale}</span>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderOutliers(avgScores, scale) {
+  const pcts = avgScores.map(v => Math.round((v / scale) * 100));
+  const mean = pcts.reduce((a,b) => a+b, 0) / pcts.length;
+  const threshold = 12;
+
+  const low = pcts.map((p, i) => ({i, p})).filter(x => x.p < mean - threshold).sort((a,b) => a.p - b.p);
+  const high = pcts.map((p, i) => ({i, p})).filter(x => x.p > mean + threshold).sort((a,b) => b.p - a.p);
+
+  const all = [...low.map(x => ({...x, type:'low'})), ...high.map(x => ({...x, type:'high'}))];
+
+  const container = document.getElementById('outlierSection');
+  if (all.length === 0) {
+    container.innerHTML = '<p style="color:var(--text2);font-size:13px">No significant outlier questions detected (all within ±' + threshold + '% of mean).</p>';
+    return;
+  }
+
+  container.innerHTML = `
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Questions deviating more than ${threshold}% from team mean (${Math.round(mean)}%):</p>
+    ${all.map(x => `
+      <div class="outlier-row">
+        <span class="outlier-badge ${x.type === 'low' ? 'badge-low' : 'badge-high'}">${x.type === 'low' ? '↓ Low' : '↑ High'}</span>
+        <span class="q-text">Q${x.i+1}: ${QUESTIONS[x.i]}</span>
+        <span class="q-score">${x.p}%</span>
+      </div>
+    `).join('')}
+  `;
+}
+</script>
+</body>
+</html>
